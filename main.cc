@@ -1,46 +1,57 @@
-#include <algorithm>
-#include <iostream>
-#include <vector>
-#include <string>
+#include "clashcmd.h"
 
-#include <json/json.h>
-#include <http.hpp>
-
-std::vector<std::string> getProxies(httplib::Client& cli) {
-  auto res = cli.Get("/proxies");
-  Json::Value body;
-  Json::Reader reader;
-  reader.parse(res->body, body, false);
-  
-  std::vector<std::string> list;
-  Json::Value& allProxies = body["proxies"]["GLOBAL"]["all"];
-  size_t size = allProxies.size();
-  for (int i = 0;i < allProxies.size(); ++i) {
-    list.push_back(allProxies[i].asString());
-  }
-  return list;
-}
-
-void getProxyInfo(httplib::Client& cli, std::string& proxy) {
-  std::string query = "/proxies/" + proxy;
-  auto res = cli.Get(query.data());
-  std::cout << res->body << "\n";
-}
-
-
-int getProxyDelay(httplib::Client& cli, std::string& proxy) {
-  std::string query = "/proxies/" + proxy + "/delay?url=http://cp.cloudflare.com/generate_204&timeout=5000";
-  auto res = cli.Get(query.data());
-  std::cout << res->status << "\n";
-  std::cout << res->body << "\n";
-  std::cout << query << "\n";
-}
 
 int main() {
-  httplib::Client cli("http://localhost:9090");
-  std::vector<std::string> proxies = getProxies(cli);
-
-  getProxyInfo(cli, proxies[0]);
-  getProxyDelay(cli, proxies[0]);
+  ClashCmd clash("http://localhost:9090");
+  std::cout << "Init finished. Please input command.\n";
+  int cmd, opt;
+  while (std::cin >> cmd) {
+    switch (cmd) {
+      case 0:
+        std::cout << "0:" << "Print all commands option.\n";
+        std::cout << "1:" << "Print all proxies.\n";
+        std::cout << "2:" << "Print all proxies and delays.\n";
+        std::cout << "3:" << "Print current proxy.\n";
+        std::cout << "4:" << "Input an proxy index and output its information.\n";
+        std::cout << "5:" << "Input an proxy index and output its delay.\n";
+        std::cout << "6:" << "Input an proxy index and select it as current proxy.\n";
+        std::cout << "8:" << "Refresh dalay test results.\n";
+        std::cout << "9:" << "Exit.\n";
+        break;
+      case 1:
+        clash.printAllProxies();
+        break;
+      case 2:
+        std::cout << "Start testing delay\n";
+        clash.printAllProxiesAnyDelays();
+        break;
+      case 3:
+        clash.printCurrentProxy();
+        break;
+      case 4:
+        std::cin >> opt;
+        std::cout << clash.getProxyInfo(opt) << "\n";
+        break;
+      case 5:
+        std::cin >> opt;
+        std::cout << "Proxy:" << clash.proxyName(opt) << "\nDelay:";
+        std::cout << clash.getProxyDelay(opt) << "\n";
+        break;
+      case 6:
+        std::cin >> opt;
+        clash.selectProxy(opt);
+        break;
+      case 8:
+        clash.getAllProxiesDealy();
+        std::cout << "Refresh finished\n";
+        break;
+      case 9:
+        exit(0);
+        break;
+      default:
+        std::cout << "Input 0 to get help information\n";
+        break;
+    }
+    std::cout << "===============================\n";
+  }
 }
-
